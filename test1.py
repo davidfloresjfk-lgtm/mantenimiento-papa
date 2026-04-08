@@ -10,7 +10,8 @@ DB_FILE = "gestion_activos.csv"
 def cargar_datos():
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
-        df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
+        # Esto obliga a que la fecha se lea siempre como texto, evitando errores
+        df['Fecha'] = df['Fecha'].astype(str)
         return df
     return pd.DataFrame(columns=["Equipo", "Tipo", "Fecha", "Horas_Operacion", "Horas_Reparacion", "Falla", "Estado"])
 
@@ -32,11 +33,14 @@ with st.sidebar.form("registro_form"):
     boton_guardar = st.form_submit_button("Guardar Datos")
 
 if boton_guardar:
-    nuevo = pd.DataFrame([[equipo, tipo, fecha, h_operacion, h_reparacion, es_falla, "Finalizado"]], 
+    # Convertimos la fecha a texto simple 'AAAA-MM-DD' antes de guardar
+    fecha_str = fecha.strftime('%Y-%m-%d')
+    nuevo = pd.DataFrame([[equipo, tipo, fecha_str, h_operacion, h_reparacion, es_falla, "Finalizado"]], 
                          columns=df.columns)
     df = pd.concat([df, nuevo], ignore_index=True)
     df.to_csv(DB_FILE, index=False)
     st.sidebar.success("Registrado correctamente")
+    st.rerun() # Esto refresca la app automáticamente para que veas el cambio
 
 # --- CÁLCULO DE KPIs ---
 st.header("📊 Indicadores de Rendimiento")
